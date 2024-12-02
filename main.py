@@ -1,6 +1,10 @@
 def new_func():
     print('Я новая функция!')
 
+def better_func():
+    print('Я более крутая новая функция!')
+
+
 def main():
     print('Точно моя первая программа git в PyCharm!')
     print("Вношу изменения в репозиторий")  # TODO: Арбуз; by: chagaevea; date: 28.11.2024;
