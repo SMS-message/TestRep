@@ -12,6 +12,8 @@ def main():
     # Топ 10 комментариев 1-е место: я
     print('Я русский')
     print('Я тоже что-то сделал')
+    new_func()
+    better_func()
 
 
 if __name__ == '__main__':
