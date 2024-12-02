@@ -4,6 +4,7 @@ def new_func():
 
 def better_func():
     print('Я более крутая новая функция!')  # Да, это правда
+    print('А тут написал уже я (gerod)')
 
 
 def main():
