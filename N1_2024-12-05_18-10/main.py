@@ -1,4 +1,5 @@
 import pygame
+from random import *
 
 
 def draw1(screen: pygame.display) -> None:
@@ -24,6 +25,11 @@ def draw_square(screen: pygame.display) -> None:
     pygame.draw.rect(screen, color, (10, 10, 100, 100), 0)
 
 
+def draw_pixels(screen: pygame.display) -> None:
+    for _ in range(10000):
+        screen.fill(pygame.Color('#353535'), (random() * width, random() * height, 10, 2))
+
+
 if __name__ == '__main__':
     pygame.init()
     size = width, height = (800, 600)
@@ -36,8 +42,11 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
 
+
         draw1(my_screen)
+        draw_pixels(my_screen)
         draw_square(my_screen)
+
 
         pygame.display.flip()
         clock.tick(30)
