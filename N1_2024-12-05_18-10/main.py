@@ -26,8 +26,12 @@ def draw_square(screen: pygame.display) -> None:
 
 
 def draw_pixels(screen: pygame.display) -> None:
-    for _ in range(10000):
+    for _ in range(3000):
         screen.fill(pygame.Color('#353535'), (random() * width, random() * height, 10, 2))
+
+
+def draw_polygon(screen: pygame.display) -> None:
+    pygame.draw.polygon(screen, pygame.Color('#FFCC00'), ((0, 150), (200, 250), (100, 350)))
 
 
 if __name__ == '__main__':
@@ -42,13 +46,12 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
 
-
         draw1(my_screen)
+        draw_polygon(my_screen)
         draw_pixels(my_screen)
         draw_square(my_screen)
 
-
         pygame.display.flip()
-        clock.tick(30)
+        clock.tick(60)
 
     pygame.quit()
