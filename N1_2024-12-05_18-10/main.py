@@ -2,16 +2,22 @@ import pygame
 
 if __name__ == '__main__':
     try:
-        w, h = map(int, input().split())
+        a, n = map(int, input().split())
 
         pygame.init()
-        size = w, h
+        size = a, a
         my_screen = pygame.display.set_mode(size)
-        pygame.display.set_caption('Прямоугольник')
+        pygame.display.set_caption('Шахматная клетка')
         clock = pygame.time.Clock()
         running = True
 
-        pygame.draw.rect(my_screen, 'red', ((1, 1), (w - 1, h - 1)))
+        flag = True
+        for i in range(n):
+            for j in range(n):
+                pygame.draw.rect(my_screen, 'black' if flag else 'white',
+                                 ((j * a // n, i * a // n), (j * a // n + i * n, i * a // n + i * n)))
+                flag -= flag
+
         while running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
