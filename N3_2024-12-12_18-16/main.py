@@ -1,4 +1,5 @@
 import pygame
+from copy import deepcopy
 
 
 class Board:
@@ -43,43 +44,71 @@ class Board:
         self.render()
 
 
+class Life(Board):
+    def __init__(self, width: int, height: int, screen: pygame.surface.Surface):
+        super().__init__(width, height, screen)
+        self.new_board = [[Cell() for _ in range(width)] for _ in range(height)]
+
+    def next_move(self, enabled: bool = False):
+        if enabled:
+            for x in range(self.w):
+                for y in range(self.h):
+                    s = sum([])
+                    if s in (2, 3):
+                        self.new_board[y][x] = Cell(True)
+                    elif s > 3 or s < 2:
+                        self.new_board[y][x] = Cell(False)
+            self.board = deepcopy(self.new_board)
+            self.new_board = [[Cell() for _ in range(self.w)] for _ in range(self.h)]
+
+
 class Cell:
-    def __init__(self):
-        self.c = ('black', 'blue', 'red',)
+    def __init__(self, alive: bool = False):
+        self.c = ('#000000', '#FFFFFF')
+        self.val = alive
 
-    def change(self):
-        self.c = self.c[2], self.c[0], self.c[1]
+    def change(self) -> None:
+        self.c = self.c[-1], *self.c[:-1]
+        self.val = False if self.val else True
 
-    def color(self):
+    def color(self) -> str:
         return self.c[0]
+
+    def __bool__(self) -> bool:
+        return self.val
 
 
 def main() -> None:
     """main function of the project"""
     pygame.init()
-    size = width, height = 440, 440
+    size = width, height = 940, 940
     screen = pygame.display.set_mode(size)
-    board = Board(10, 10, screen)
-    board.set_view(20, 20, 40)
-    clock = pygame.time.Clock()
+    life = Life(30, 30, screen)
+    life.set_view(20, 20, 30)
+    clock = pygame.time.Clock
     running = True
-    v = 100
-    dt = 0
+    flag = False
+    fps = 20
 
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                board.get_click(event.pos)
-                pass
-        screen.fill("#121212")
-        board.render()
+                life.get_click(event.pos)
+            if event.type == pygame.K_SPACE:
+                flag = not flag
+            if event.type == pygame.BUTTON_WHEELUP:
+                fps += 1
+            if event.type == pygame.BUTTON_WHEELDOWN:
+                fps -= 1
+
+        screen.fill("#3F3020")
+        life.render()
+        life.next_move(flag)
 
         pygame.display.flip()
-
-        dt = clock.tick(60) / 1000
-
+        clock.tick(fps)
     pygame.quit()
 
 
