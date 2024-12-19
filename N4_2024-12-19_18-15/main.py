@@ -1,24 +1,38 @@
 import sys
 import pygame
 import os
+from random import randrange
+
+
+class Bomb(pygame.sprite.Sprite):
+    def __init__(self, group: pygame.sprite.Group, width: int, height: int):
+        super().__init__(group)
+
+        self.image = load_image('bomb.png')
+
+        self.rect = self.image.get_rect()
+        self.rect.x = randrange(width)
+        self.rect.y = randrange(height)
+
+    def update(self, *args, **kwargs):
+        self.rect = self.rect.move(randrange(3) - 1,
+                                   randrange(3) - 1)
+        if args and args[0].type == pygame.MOUSEBUTTONDOWN:
+            if self.rect.collidepoint(args[0].pos):
+                self.image = load_image('boom.png')
 
 
 def main() -> int:
     pygame.init()
     size = width, height = (1280, 720)
     screen = pygame.display.set_mode(size)
-    clock = pygame.time.Clock()
+
+    all_sprites = pygame.sprite.Group()
+    for _ in range(100):
+        Bomb(all_sprites, width, height)
+
     screen.fill("#121212")
-    img = load_image('robot.png', -1)
-
-    robot = load_image('robot.png', -1)
-    img1 = pygame.transform.scale(robot, (500, 100))
-    screen.blit(img1, (100, 200))
-    img2 = pygame.transform.scale(robot, (100, 500))
-    screen.blit(img2, (400, 200))
-    img3 = pygame.transform.scale(robot, (500, 500))
-    screen.blit(img3, (700, 200))
-
+    clock = pygame.time.Clock()
     running = True
 
     while running:
@@ -26,8 +40,12 @@ def main() -> int:
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button in (1, 4, 5):
-                    screen.blit(img, event.pos)
+                all_sprites.update(event)
+
+        screen.fill("#121212")
+        all_sprites.draw(screen)
+        all_sprites.update()
+
         pygame.display.flip()
 
         clock.tick(60)
