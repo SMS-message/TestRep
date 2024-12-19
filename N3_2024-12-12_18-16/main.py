@@ -16,9 +16,9 @@ class Board:
         for x in range(self.w):
             for y in range(self.h):
                 color = self.board[y][x].color()
-                pygame.draw.rect(self.s, 'white', (x * self.cell_size + self.left,
-                                                   y * self.cell_size + self.top,
-                                                   self.cell_size, self.cell_size), 1)
+                pygame.draw.rect(self.s, '#353535', (x * self.cell_size + self.left,
+                                                     y * self.cell_size + self.top,
+                                                     self.cell_size, self.cell_size), 1)
                 pygame.draw.rect(self.s, color, (x * self.cell_size + self.left + 1,
                                                  y * self.cell_size + self.top + 1,
                                                  self.cell_size - 2, self.cell_size - 2))
@@ -53,10 +53,47 @@ class Life(Board):
         if enabled:
             for x in range(self.w):
                 for y in range(self.h):
-                    s = sum([])
-                    if s in (2, 3):
+                    if (x, y) == (0, self.h - 1):
+                        s = sum(map(int, (self.board[y - 1][x],
+                                          self.board[y][x + 1],
+                                          self.board[y - 1][x + 1])))
+                    elif (x, y) == (self.w - 1, 0):
+                        s = sum(map(int, (self.board[y + 1][x], self.board[y][x - 1],
+                                          self.board[y + 1][x - 1],
+                                          )))
+                    elif (x, y) == (self.w - 1, self.h - 1):
+                        s = sum(map(int, (self.board[y - 1][x], self.board[y][x - 1],
+                                          self.board[y - 1][x - 1]
+                                          )))
+                    elif (x, y) == (0, 0):
+                        s = sum(map(int, (self.board[y + 1][x],
+                                          self.board[y][x + 1],
+                                          self.board[y + 1][x + 1])))
+                    elif x == 0:
+                        s = sum(map(int, (self.board[y + 1][x], self.board[y - 1][x],
+                                          self.board[y][x + 1],
+                                          self.board[y + 1][x + 1], self.board[y - 1][x + 1])))
+                    elif y == 0:
+                        s = sum(map(int, (self.board[y + 1][x], self.board[y][x - 1],
+                                          self.board[y + 1][x - 1], self.board[y][x + 1],
+                                          self.board[y + 1][x + 1])))
+                    elif x == self.w - 1:
+                        s = sum(map(int, (self.board[y + 1][x], self.board[y - 1][x], self.board[y][x - 1],
+                                          self.board[y + 1][x - 1], self.board[y - 1][x - 1])))
+                    elif y == self.h - 1:
+                        s = sum(map(int, (self.board[y - 1][x], self.board[y][x - 1],
+                                          self.board[y - 1][x - 1], self.board[y][x + 1],
+                                          self.board[y - 1][x + 1])))
+                    else:
+                        s = sum(map(int, (self.board[y + 1][x], self.board[y - 1][x], self.board[y][x - 1],
+                                          self.board[y + 1][x - 1], self.board[y - 1][x - 1], self.board[y][x + 1],
+                                          self.board[y + 1][x + 1], self.board[y - 1][x + 1])))
+
+                    if s == 3:
                         self.new_board[y][x] = Cell(True)
-                    elif s > 3 or s < 2:
+                    elif s == 2 and self.board[y][x]:
+                        self.new_board[y][x] = Cell(True)
+                    else:
                         self.new_board[y][x] = Cell(False)
             self.board = deepcopy(self.new_board)
             self.new_board = [[Cell() for _ in range(self.w)] for _ in range(self.h)]
@@ -64,18 +101,25 @@ class Life(Board):
 
 class Cell:
     def __init__(self, alive: bool = False):
-        self.c = ('#000000', '#FFFFFF')
         self.val = alive
 
     def change(self) -> None:
-        self.c = self.c[-1], *self.c[:-1]
         self.val = False if self.val else True
 
     def color(self) -> str:
-        return self.c[0]
+        return '#CCCCCC' if self.val else '#000000'
 
     def __bool__(self) -> bool:
         return self.val
+
+    def __int__(self) -> 1 | 0:
+        return int(self.val)
+
+    def __str__(self) -> str:
+        return f'{self.val}'
+
+    def __repr__(self) -> str:
+        return f"Cell({self.val})"
 
 
 def main() -> None:
@@ -85,23 +129,28 @@ def main() -> None:
     screen = pygame.display.set_mode(size)
     life = Life(30, 30, screen)
     life.set_view(20, 20, 30)
-    clock = pygame.time.Clock
+    clock = pygame.time.Clock()
     running = True
     flag = False
-    fps = 20
+    fps = 6
 
     while running:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                life.get_click(event.pos)
             if event.type == pygame.K_SPACE:
                 flag = not flag
-            if event.type == pygame.BUTTON_WHEELUP:
-                fps += 1
-            if event.type == pygame.BUTTON_WHEELDOWN:
-                fps -= 1
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                match event.button:
+                    case 1:
+                        life.get_click(event.pos)
+                    case 3:
+                        flag = not flag
+                    case 4:
+                        fps += 2
+                    case 5:
+                        if fps > 1:
+                            fps -= 1
+            if event.type == pygame.QUIT:
+                running = False
 
         screen.fill("#3F3020")
         life.render()
