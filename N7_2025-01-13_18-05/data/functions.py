@@ -3,12 +3,16 @@ import os
 import sys
 import pygame
 
+# Зависимости для меню
+import pygame_menu
+from pygame_menu.examples import create_example_window
+from typing import Tuple, Any
+
 # Внутренние зависимости:
 from data.config import *
 from data.classes import *
-import pygame_menu
-from pygame_menu.examples import create_example_window
 
+tiles_dict = {}
 
 def load_image(name, color_key=None):
     """Загрузка изображений"""
@@ -34,19 +38,21 @@ def generate_level(level):
     tile_images = {
         'wall': load_image('box.png'),
         'empty': load_image('grass.png'),
-        'player': load_image('mar.png'),
     }
 
-    player_image = load_image("mario.png")
+    player_image = load_image('mar.png')
 
     for y in range(len(level)):
         for x in range(len(level[y])):
             match level[y][x]:
                 case '.':
+                    tiles_dict[(x, y)] = 0
                     Tile(tile_images, 'empty', x, y)
                 case '#':
+                    tiles_dict[(x, y)] = 1
                     Tile(tile_images, 'wall', x, y)
                 case "@":
+                    tiles_dict[(x, y)] = 0
                     Tile(tile_images, 'empty', x, y)
                     new_player = Player(player_image, x, y)
 
@@ -84,7 +90,7 @@ def rules_screen():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type in (pygame.KEYUP, pygame.MOUSEBUTTONUP):
-                return
+                return  # Закрываем окно правил и возвращаемся обратно в меню
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -102,9 +108,10 @@ def load_level(filename):
 
 def game_cycle(user_name, difficulty):
     """Главный игровой цикл"""
-
+    print(difficulty)
     player, x, y = generate_level(load_level(LEVELS_LIST[difficulty]))
-
+    # Перед началом игрового цикла создадим камеру:
+    camera = Camera()
     running = True
     while running:
         for event in pygame.event.get():
@@ -113,31 +120,56 @@ def game_cycle(user_name, difficulty):
                 break
             if event.type == pygame.KEYDOWN:
                 match event.key:
-                    case pygame.K_a:
+                    case pygame.K_LEFT:
+                        if player.x <= 0 or tiles_dict[player.x - 1, player.y]:
+                            continue
+                        player.x -= 1
                         player.rect.x -= STEP
-                    case pygame.K_d:
+                    case pygame.K_RIGHT:
+                        if player.x > 10 or tiles_dict[player.x + 1, player.y]:
+                            continue
+                        player.x += 1
                         player.rect.x += STEP
-                    case pygame.K_w:
+                    case pygame.K_UP:
+                        if player.y <= 0 or tiles_dict[player.x, player.y - 1]:
+                            continue
+                        player.y -= 1
                         player.rect.y -= STEP
-                    case pygame.K_s:
+                    case pygame.K_DOWN:
+                        if player.y > 9 or tiles_dict[player.x, player.y + 1]:
+                            continue
+                        player.y += 1
                         player.rect.y += STEP
-
+        # изменяем ракурс камеры
+        camera.update(player)
+        # обновляем положение всех спрайтов
+        for sprite in all_sprites:
+            camera.apply(sprite)
         screen.fill(pygame.Color(0, 0, 0))
         tiles_group.draw(screen)
         player_group.draw(screen)
+
+        # Выводим имя игрока:
+        string_rendered = font.render(f'Игрок: {user_name}', 1, pygame.Color('white'))
+        screen.blit(string_rendered, string_rendered.get_rect())
 
         pygame.display.flip()
         clock.tick(FPS)
     terminate()
 
 
-def set_difficulty(selected, value) -> None:
+def set_difficulty(selected: Tuple, value: Any) -> None:
+    """
+    Set the difficulty of the game.
+    """
+    print(f'Set difficulty to {selected[0]} ({value})')
     global DIFFICULTY
-
     DIFFICULTY = value
+    print("DIFFICULTY ", DIFFICULTY)
 
 
 def menu():
+    print("DIFFICULTY menu", DIFFICULTY)
     surface = create_example_window(GAME_NAME, SIZE)
     menu = pygame_menu.Menu(
         height=HEIGHT,
@@ -146,10 +178,9 @@ def menu():
         width=WIDTH
     )
 
-    user_name = menu.add.text_input('Имя: ', default='Марио', maxchar=10)
-    menu.add.selector('Сложность: ', [('Hard', 1), ('Easy', 0)], onchange=set_difficulty)
+    user_name = menu.add.text_input('Представься: ', default=GAME_NAME, maxchar=10)
+    menu.add.selector('Сложность: ', [('Easy', 0), ('Hard', 1)], onchange=set_difficulty)
     menu.add.button('Правила', rules_screen)
-    menu.add.button('Играть', game_cycle, user_name, DIFFICULTY)
+    menu.add.button('Играть', lambda: game_cycle(user_name.get_value(), DIFFICULTY))
     menu.add.button('Выход', terminate)
-
     menu.mainloop(surface)
