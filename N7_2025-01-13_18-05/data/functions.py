@@ -6,6 +6,8 @@ import pygame
 # Внутренние зависимости:
 from data.config import *
 from data.classes import *
+import pygame_menu
+from pygame_menu.examples import create_example_window
 
 
 def load_image(name, color_key=None):
@@ -35,14 +37,20 @@ def generate_level(level):
         'player': load_image('mar.png'),
     }
 
+    player_image = load_image("mario.png")
+
     for y in range(len(level)):
         for x in range(len(level[y])):
             match level[y][x]:
-                case '.': Tile(tile_images, 'empty', x, y)
-                case '#': Tile(tile_images, 'wall', x, y)
-                case "@": Tile(tile_images, 'player', x, y)
+                case '.':
+                    Tile(tile_images, 'empty', x, y)
+                case '#':
+                    Tile(tile_images, 'wall', x, y)
+                case "@":
+                    Tile(tile_images, 'empty', x, y)
+                    new_player = Player(player_image, x, y)
 
-    return None
+    return new_player, x, y
 
 
 def terminate():
@@ -76,7 +84,7 @@ def rules_screen():
             if event.type == pygame.QUIT:
                 terminate()
             elif event.type in (pygame.KEYUP, pygame.MOUSEBUTTONUP):
-                game_cycle("Марио", 0)
+                return
         pygame.display.flip()
         clock.tick(FPS)
 
@@ -92,11 +100,10 @@ def load_level(filename):
     return list(map(lambda x: x.ljust(max_width, '.'), level_map))
 
 
-
 def game_cycle(user_name, difficulty):
     """Главный игровой цикл"""
 
-    generate_level(load_level(LEVELS_LIST[difficulty]))
+    player, x, y = generate_level(load_level(LEVELS_LIST[difficulty]))
 
     running = True
     while running:
@@ -104,11 +111,45 @@ def game_cycle(user_name, difficulty):
             if event.type == pygame.QUIT:
                 running = False
                 break
+            if event.type == pygame.KEYDOWN:
+                match event.key:
+                    case pygame.K_a:
+                        player.rect.x -= STEP
+                    case pygame.K_d:
+                        player.rect.x += STEP
+                    case pygame.K_w:
+                        player.rect.y -= STEP
+                    case pygame.K_s:
+                        player.rect.y += STEP
 
         screen.fill(pygame.Color(0, 0, 0))
         tiles_group.draw(screen)
+        player_group.draw(screen)
 
         pygame.display.flip()
         clock.tick(FPS)
     terminate()
 
+
+def set_difficulty(selected, value) -> None:
+    global DIFFICULTY
+
+    DIFFICULTY = value
+
+
+def menu():
+    surface = create_example_window(GAME_NAME, SIZE)
+    menu = pygame_menu.Menu(
+        height=HEIGHT,
+        theme=pygame_menu.themes.THEME_DARK,
+        title=GAME_NAME,
+        width=WIDTH
+    )
+
+    user_name = menu.add.text_input('Имя: ', default='Марио', maxchar=10)
+    menu.add.selector('Сложность: ', [('Hard', 1), ('Easy', 0)], onchange=set_difficulty)
+    menu.add.button('Правила', rules_screen)
+    menu.add.button('Играть', game_cycle, user_name, DIFFICULTY)
+    menu.add.button('Выход', terminate)
+
+    menu.mainloop(surface)
